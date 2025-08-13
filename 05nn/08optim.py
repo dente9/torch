@@ -1,0 +1,50 @@
+from torch import nn
+from torch.nn import Conv2d, MaxPool2d, Flatten, Linear
+import torch
+from torch.utils.data import DataLoader
+import torchvision
+
+
+dataset = torchvision.datasets.CIFAR10(
+    root="../data",
+    train=True,
+    download=True,
+    transform=torchvision.transforms.ToTensor(),
+)
+dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
+
+
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.model1 = nn.Sequential(
+            Conv2d(3, 32, 5, padding=2),
+            MaxPool2d(2),
+            Conv2d(32, 32, 5, padding=2),
+            MaxPool2d(2),
+            Conv2d(32, 64, 5, padding=2),
+            MaxPool2d(2),
+            Flatten(),
+            Linear(1024, 64),
+            Linear(64, 10),
+        )
+
+    def forward(self, x):
+        x = self.model1(x)
+        return x
+
+
+net = Net()
+loss = nn.CrossEntropyLoss()
+optim = torch.optim.SGD(net.parameters(), lr=0.01)
+for epoch in range(10):
+    running_loss = 0.0
+    for data in dataloader:
+        inputs, labels = data
+        outputs = net(inputs)
+        loss_result = loss(outputs, labels)
+        optim.zero_grad()
+        loss_result.backward()
+        optim.step()
+        running_loss += loss_result
+    print(epoch, running_loss)
